@@ -7,4 +7,4 @@
 4.Tampilan End Point CheckOut tanpa CheckIn:
    ![Check In Tanpa CheckOut](ss3/checkouttanpacheckin.PNG)
 5.Tampilan End Point ReportsDaily:
-   ![Reports Daily](ss3/daily.png)
+   ![Reports Daily](ss3/daily.PNG)
