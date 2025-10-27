@@ -10,7 +10,7 @@ const morgan = require("morgan");
 const presensiRoutes = require("./routes/presensi");
 const reportRoutes = require("./routes/reports");
 
-// ===== Gunakan fungsi baru =====
+// ===== Gunakan fungsi baru =====ser
 app.use("/api/presensi", presensiRoutes);
 app.use("/api/reports", reportRoutes);
 
