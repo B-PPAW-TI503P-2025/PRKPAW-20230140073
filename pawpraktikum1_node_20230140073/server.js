@@ -1,51 +1,45 @@
-// ===== Import Module =====
+const bookRoutes = require('./routes/books');
 const express = require('express');
 const cors = require('cors');
 const app = express();
 const PORT = 3001;
 const morgan = require("morgan");
 
-
 // Impor router
 const presensiRoutes = require("./routes/presensi");
 const reportRoutes = require("./routes/reports");
 
-// ===== Gunakan fungsi baru =====ser
-app.use("/api/presensi", presensiRoutes);
-app.use("/api/reports", reportRoutes);
-
-// ===== Middleware =====
-app.use(cors()); // izinkan akses dari React (frontend)
-app.use(express.json()); // parsing body JSON
-
-// Middleware custom untuk logging
+// // Middleware (HARUS DI ATAS ROUTE SPESIFIK)
+app.use(cors());
+app.use(express.json()); // <--- Body Parser untuk JSON
+app.use(morgan("dev"));
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
     next();
 });
+// // END Middleware
 
-// ===== Routing dasar =====
+// Route Spesifik (HARUS DI BAWAH Body Parser)
+app.use('/api/books', bookRoutes);
+
 app.get('/', (req, res) => {
     res.send('Home Page for API');
 });
-
-// ===== Routing CRUD Buku =====
-const bookRoutes = require('./routes/books');
-app.use('/api/books', bookRoutes);
-
-// ===== Middleware Error Handling =====
-// 404 handler
-app.use((req, res, next) => {
-    res.status(404).json({ message: 'Route not found' });
-});
-
-// Global error handler
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(err.status || 500).json({ message: err.message || 'Internal Server Error' });
-});
-
-// ===== Jalankan Server =====
+const ruteBuku = require("./routes/books");
+app.use("/api/books", ruteBuku);
+app.use("/api/presensi", presensiRoutes);
+app.use("/api/reports", reportRoutes);
 app.listen(PORT, () => {
     console.log(`Express server running at http://localhost:${PORT}/`);
+});
+
+// Middleware 404 - jika route tidak ditemukan
+app.use((req, res, next) => {
+    res.status(404).json({ message: 'Endpoint not found' });
+});
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+    console.error('Global Error:', err.stack);
+    res.status(500).json({ message: 'Internal Server Error' });
 });
