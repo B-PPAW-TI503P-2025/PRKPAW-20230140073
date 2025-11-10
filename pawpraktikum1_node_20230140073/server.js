@@ -9,6 +9,9 @@ const morgan = require("morgan");
 const presensiRoutes = require("./routes/presensi");
 const reportRoutes = require("./routes/reports");
 
+
+const authRoutes = require('./routes/auth');
+
 // // Middleware (HARUS DI ATAS ROUTE SPESIFIK)
 app.use(cors());
 app.use(express.json()); // <--- Body Parser untuk JSON
@@ -21,6 +24,12 @@ app.use((req, res, next) => {
 
 // Route Spesifik (HARUS DI BAWAH Body Parser)
 app.use('/api/books', bookRoutes);
+
+
+
+
+//auth
+app.use('/api/auth', authRoutes);
 
 app.get('/', (req, res) => {
     res.send('Home Page for API');
