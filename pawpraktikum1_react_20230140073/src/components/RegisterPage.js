@@ -16,7 +16,6 @@ function RegisterPage() {
     setError(null);
     setSuccess(null);
     try {
-      // Mengirim data ke endpoint POST /api/auth/register
       const response = await axios.post(
         "http://localhost:3001/api/auth/register",
         {
@@ -28,7 +27,6 @@ function RegisterPage() {
       );
 
       setSuccess(response.data.message);
-      // Setelah berhasil register, arahkan pengguna ke halaman /login [cite: 1079]
       setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
       setError(err.response ? err.response.data.message : "Registrasi gagal.");
@@ -43,7 +41,6 @@ function RegisterPage() {
           Register{" "}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Input Nama [cite: 1077] */}{" "}
           <div>
             <label
               htmlFor="nama"
@@ -79,7 +76,6 @@ function RegisterPage() {
               className="mt-1 w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-          {/* Input Password */}{" "}
           <div>
             <label
               htmlFor="password"
@@ -97,7 +93,6 @@ function RegisterPage() {
               className="mt-1 w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-          {/* Input Role [cite: 1077] */}{" "}
           <div>
             <label
               htmlFor="role"

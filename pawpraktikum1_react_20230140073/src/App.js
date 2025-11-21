@@ -23,7 +23,6 @@ function AppContent() {
 
   return (
     <>
-      {/* Tampilkan Navbar jika bukan login/register */}
       {!shouldHideNavbar && <Navbar />}
 
       <Routes>
