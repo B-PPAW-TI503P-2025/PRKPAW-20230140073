@@ -41,6 +41,7 @@ exports.getDailyReport = async (req, res) => {
     // Build include for User and optional nama filter
     const userInclude = {
       model: User,
+      as: "user", // ← WAJIB karena relasi pakai alias
       attributes: ["id", "nama", "email"],
     };
 
@@ -48,7 +49,6 @@ exports.getDailyReport = async (req, res) => {
       userInclude.where = {
         nama: { [Op.like]: `%${nama}%` },
       };
-      // required:true agar join menjadi inner join (hanya record dengan user yang match)
       userInclude.required = true;
     }
 
@@ -63,10 +63,19 @@ exports.getDailyReport = async (req, res) => {
     const data = records.map((r) => ({
       id: r.id,
       user: r.User
-        ? { id: r.User.id, nama: r.User.nama, email: r.User.email }
+        ? user
+        : r.user
+        ? {
+            id: r.user.id,
+            nama: r.user.nama,
+            email: r.user.email,
+          }
         : null,
+
       checkIn: r.checkIn,
       checkOut: r.checkOut,
+      latitude: r.latitude,
+      longitude: r.longitude,
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
     }));
@@ -77,6 +86,7 @@ exports.getDailyReport = async (req, res) => {
       data,
     });
   } catch (error) {
+    console.log("ERROR REPORT:", error);
     res.status(500).json({
       message: "Gagal mengambil laporan",
       error: error.message,

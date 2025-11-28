@@ -9,7 +9,7 @@ const {
 // Endpoint: GET /api/reports/daily
 // Fungsi: mencari presensi berdasarkan nama atau rentang tanggal
 // Contoh:
-//   GET /api/reports/daily?nama=SALSA
+//   GET /api/reports/daily?nama=Naufal
 //   GET /api/reports/daily?tanggalMulai=2025-10-01&tanggalSelesai=2025-10-31
 // Middleware: hanya bisa diakses oleh admin
 router.get(

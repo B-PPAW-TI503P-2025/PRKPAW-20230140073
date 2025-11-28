@@ -6,3 +6,5 @@
 ![CHECKOUT](sstugas9/checkout.PNG)
 4.Tampilan Database Presensi:
 ![DB](sstugas9/db.PNG)
+5.Tampilan Reports Data:
+![RP](sstugas9/reports.PNG)
