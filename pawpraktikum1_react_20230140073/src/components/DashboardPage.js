@@ -1,28 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
 
 function DashboardPage() {
-  const [userName, setUserName] = useState("Pengguna");
-  const [userRole, setUserRole] = useState("...");
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
-    try {
-      const decoded = jwtDecode(token);
-      setUserName(decoded.nama || decoded.email || "Pengguna");
-      setUserRole(decoded.role || "N/A");
-    } catch (error) {
-      console.error("Token tidak valid:", error);
-      handleLogout();
-    }
-  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -30,26 +10,25 @@ function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-8">
-      <div className="bg-white p-10 rounded-lg shadow-xl text-center w-full max-w-lg">
-        <h1 className="text-4xl font-extrabold text-indigo-600 mb-3">
-          Selamat Datang, {userName}!
-        </h1>{" "}
-        <p className="text-xl text-gray-700 mb-2">
-          Anda berhasil login sebagai ** {userRole} ** .{" "}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-100 flex flex-col items-center justify-center">
+      <div className="bg-white p-10 rounded-2xl shadow-xl text-center w-full max-w-lg">
+        <h1 className="text-4xl font-bold text-green-600 mb-4">
+          Selamat Datang! 🎉
+        </h1>
+        <p className="text-gray-700 text-lg mb-6">
+          Kamu berhasil login ke Dashboard. Sekarang kamu bisa menjelajah fitur
+          aplikasi ini.
         </p>
-        <div className="mt-8">
-          <p className="text-gray-500 mb-4">
-            Ini adalah halaman dashboard Anda yang sudah terautentikasi.{" "}
-          </p>{" "}
+
+        <div className="flex flex-col items-center space-y-3">
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 text-white px-6 py-2 rounded-md hover:bg-red-600"
+          >
+            Logout
+          </button>
         </div>
-        <button
-          onClick={handleLogout}
-          className="mt-6 py-2 px-6 bg-red-600 text-white font-semibold rounded-md shadow-lg hover:bg-red-700 transition duration-150"
-        >
-          Logout{" "}
-        </button>{" "}
-      </div>{" "}
+      </div>
     </div>
   );
 }

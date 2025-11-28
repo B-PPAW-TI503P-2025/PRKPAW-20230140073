@@ -1,55 +1,136 @@
-import React, { useState } from "react";
+// src/components/PresensiPage.js
+import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import icon from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
+
+L.Marker.prototype.options.icon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconRetinaUrl: icon,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  tooltipAnchor: [16, -28],
+  shadowSize: [41, 41],
+});
 
 function PresensiPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const getToken = () => localStorage.getItem("token");
+  const [coords, setCoords] = useState(null); // {lat, lng}
+  const [isLoading, setIsLoading] = useState(true);
+
+  const getToken = () => {
+    return localStorage.getItem("token");
+  };
+
+  // Fungsi untuk mendapatkan lokasi pengguna
+  const getLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCoords({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+          setIsLoading(false);
+        },
+        (error) => {
+          setError("Gagal mendapatkan lokasi: " + error.message);
+          setIsLoading(false);
+        }
+      );
+    } else {
+      setError("Geolocation tidak didukung oleh browser ini.");
+      setIsLoading(false);
+    }
+  };
+  useEffect(() => {
+    getLocation();
+  }, []);
 
   const handleCheckIn = async () => {
-    setError("");
-    setMessage("");
+    if (!coords) {
+      setError("Lokasi belum didapatkan. Mohon izinkan akses lokasi.");
+      return;
+    }
     try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+      };
+
       const response = await axios.post(
-        "http://localhost:3001/api/presensi/check-in",
-        {},
+        "http://localhost:3001/api/Presensi/check-in",
+        // Kirim data lokasi bersama request
         {
-          headers: {
-            Authorization: `Bearer ${getToken()}`,
-          },
-        }
+          latitude: coords.lat,
+          longitude: coords.lng,
+        },
+        config
       );
 
       setMessage(response.data.message);
     } catch (err) {
-      setError(err.response?.data?.message || "Check-In gagal");
+      setError(err.response ? err.response.data.message : "Check-in gagal");
     }
   };
 
   const handleCheckOut = async () => {
     setError("");
     setMessage("");
-
     try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+      };
       const response = await axios.post(
-        "http://localhost:3001/api/presensi/check-out",
+        "http://localhost:3001/api/Presensi/check-out",
         {},
-        {
-          headers: {
-            Authorization: `Bearer ${getToken()}`,
-          },
-        }
+        config
       );
 
       setMessage(response.data.message);
     } catch (err) {
-      setError(err.response?.data?.message || "Check-Out gagal");
+      setError(err.response ? err.response.data.message : "Check-out gagal");
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center pt-10 pb-10">
+      {isLoading ? (
+        <div className="bg-white p-10 rounded-lg shadow-md w-full max-w-6xl mb-8 text-center">
+          <p className="text-xl font-semibold text-blue-600 animate-pulse">
+            Memuat Peta dan Mendeteksi Lokasi...
+          </p>
+          {error && <p className="text-red-600 mt-4">{error}</p>}
+        </div>
+      ) : (
+        <div className="bg-white p-4 rounded-lg shadow-md w-full mb-8 px-8 max-w-6xl">
+          <h3 className="text-xl font-semibold mb-2">Lokasi Terdeteksi:</h3>
+          <div className="my-4 border rounded-lg overflow-hidden">
+            <MapContainer
+              center={[coords.lat, coords.lng]}
+              zoom={15}
+              style={{ height: "300px", width: "100%" }}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <Marker position={[coords.lat, coords.lng]}>
+                <Popup>Lokasi Presensi Anda</Popup>
+              </Marker>
+            </MapContainer>
+          </div>
+        </div>
+      )}
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
         <h2 className="text-3xl font-bold mb-6 text-gray-800">
           Lakukan Presensi
