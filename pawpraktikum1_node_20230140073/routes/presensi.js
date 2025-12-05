@@ -5,28 +5,24 @@ const { authenticateToken } = require("../middleware/permissionMiddleware");
 const { body, validationResult } = require("express-validator");
 
 router.use(authenticateToken);
-router.post("/check-in", presensiController.CheckIn);
+
+router.post(
+  "/check-in",
+  presensiController.upload.single("image"),
+  presensiController.CheckIn
+);
+
 router.post("/check-out", presensiController.CheckOut);
 
-router.put("/:id", presensiController.updatePresensi);
-router.delete("/:id", presensiController.deletePresensi);
-
-//VALIDASI FORMAT TANGGAL SAAT UPDATE//
+// --- VALIDASI & UPDATE ---
 router.put(
   "/:id",
   [
-    body("checkIn")
-      .optional()
-      .isISO8601()
-      .withMessage(
-        "Format checkIn tidak valid (gunakan format 'YYYY-MM-DD HH:mm:ss')"
-      ),
+    body("checkIn").optional().isISO8601().withMessage("Format checkIn salah"),
     body("checkOut")
       .optional()
       .isISO8601()
-      .withMessage(
-        "Format checkOut tidak valid (gunakan format 'YYYY-MM-DD HH:mm:ss')"
-      ),
+      .withMessage("Format checkOut salah"),
   ],
   (req, res, next) => {
     const errors = validationResult(req);
@@ -40,5 +36,7 @@ router.put(
   },
   presensiController.updatePresensi
 );
+
+router.delete("/:id", presensiController.deletePresensi);
 
 module.exports = router;

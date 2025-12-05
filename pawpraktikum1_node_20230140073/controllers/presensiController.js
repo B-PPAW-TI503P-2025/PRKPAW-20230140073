@@ -2,12 +2,49 @@ const { Presensi } = require("../models");
 const { format } = require("date-fns-tz");
 const timeZone = "Asia/Jakarta";
 
-//CHECK IN
+// MULTER CONFIG
+
+const multer = require("multer");
+const path = require("path");
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${req.user.id}-${Date.now()}${path.extname(file.originalname)}`);
+  },
+});
+
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith("image/")) {
+    cb(null, true);
+  } else {
+    cb(new Error("Hanya file gambar yang diperbolehkan!"), false);
+  }
+};
+
+exports.upload = multer({ storage: storage, fileFilter: fileFilter });
+
+// CHECK IN
+// CHECK IN
 exports.CheckIn = async (req, res) => {
   try {
+    console.log("========== DEBUG CHECK-IN ==========");
+    console.log("req.file =", req.file);
+    console.log("req.body =", req.body);
+    console.log("req.user =", req.user);
+    console.log("====================================");
+
     const { id: userId, nama: userName } = req.user;
     const waktuSekarang = new Date();
     const { latitude, longitude } = req.body;
+
+    // SIMPAN HANYA PATH (PAKAI SLASH)
+    const buktiFoto = req.file
+      ? `uploads/${req.file.filename}` // <<=== FIX PENTING
+      : null;
+
     const existingRecord = await Presensi.findOne({
       where: { userId: userId, checkOut: null },
     });
@@ -18,38 +55,32 @@ exports.CheckIn = async (req, res) => {
         .json({ message: "Anda sudah melakukan check-in hari ini." });
     }
 
-    // Buat catatan baru
     const newRecord = await Presensi.create({
-      userId: userId,
+      userId,
       checkIn: waktuSekarang,
       latitude: latitude || null,
       longitude: longitude || null,
+      buktiFoto, // <<=== path saja
     });
-
-    const formattedData = {
-      userId: newRecord.userId,
-      checkIn: format(newRecord.checkIn, "yyyy-MM-dd HH:mm:ssXXX", {
-        timeZone,
-      }),
-      checkOut: null,
-    };
 
     res.status(201).json({
-      message: `Halo ${userName}, check-in Anda berhasil pada pukul ${format(
-        waktuSekarang,
-        "HH:mm:ss",
-        { timeZone }
-      )} WIB`,
-      data: formattedData,
+      message: `Halo ${userName}, check-in berhasil.`,
+      data: {
+        ...newRecord.dataValues,
+        buktiFoto: `${req.protocol}://${req.get("host")}/${buktiFoto}`, // kirim URL ke FE
+      },
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Terjadi kesalahan pada server", error: error.message });
+    console.log("❌ ERROR CHECK-IN =", error);
+    res.status(500).json({
+      message: "Terjadi kesalahan pada server",
+      error: error.message,
+    });
   }
 };
 
-//CHECK OUT
+// CHECK OUT
+
 exports.CheckOut = async (req, res) => {
   try {
     const { id: userId, nama: userName } = req.user;
@@ -94,6 +125,7 @@ exports.CheckOut = async (req, res) => {
 };
 
 // DELETE PRESENSI
+
 exports.deletePresensi = async (req, res) => {
   try {
     const { id: userId } = req.user;
@@ -122,13 +154,13 @@ exports.deletePresensi = async (req, res) => {
   }
 };
 
-//UPDATE PRESENSI
+// UPDATE PRESENSI
+
 exports.updatePresensi = async (req, res) => {
   try {
     const presensiId = req.params.id;
     const { checkIn, checkOut } = req.body;
 
-    // Validasi jika semua field kosong
     if (checkIn === undefined && checkOut === undefined) {
       return res.status(400).json({
         message:
@@ -136,13 +168,11 @@ exports.updatePresensi = async (req, res) => {
       });
     }
 
-    // Fungsi untuk validasi tanggal
     const isValidDate = (value) => {
       const date = new Date(value);
       return !isNaN(date.getTime());
     };
 
-    // Cek validasi tanggal
     if (checkIn && !isValidDate(checkIn)) {
       return res.status(400).json({
         message:
@@ -157,7 +187,6 @@ exports.updatePresensi = async (req, res) => {
       });
     }
 
-    // Cari data berdasarkan ID
     const recordToUpdate = await Presensi.findByPk(presensiId);
     if (!recordToUpdate) {
       return res
@@ -165,7 +194,6 @@ exports.updatePresensi = async (req, res) => {
         .json({ message: "Catatan presensi tidak ditemukan." });
     }
 
-    // Update data
     recordToUpdate.checkIn = checkIn || recordToUpdate.checkIn;
     recordToUpdate.checkOut = checkOut || recordToUpdate.checkOut;
     await recordToUpdate.save();

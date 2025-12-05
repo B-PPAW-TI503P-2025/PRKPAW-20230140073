@@ -38,7 +38,6 @@ module.exports = (sequelize, DataTypes) => {
       },
       buktiFoto: {
         type: DataTypes.STRING,
-        allowNull: true,
       },
     },
     {

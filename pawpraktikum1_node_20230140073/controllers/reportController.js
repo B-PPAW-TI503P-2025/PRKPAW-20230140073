@@ -1,4 +1,3 @@
-// reportController.js
 const { Presensi, User } = require("../models");
 const { Op } = require("sequelize");
 
@@ -7,41 +6,32 @@ exports.getDailyReport = async (req, res) => {
     const { nama, tanggalMulai, tanggalSelesai } = req.query;
     const where = {};
 
-    // Filter tanggal: jika ada, ubah menjadi rentang full-day (00:00:00 - 23:59:59)
+    // ==========================
+    // FILTER TANGGAL
+    // ==========================
     if (tanggalMulai && tanggalSelesai) {
-      const startDate = new Date(`${tanggalMulai}T00:00:00`);
-      const endDate = new Date(`${tanggalSelesai}T23:59:59`);
-
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        return res.status(400).json({
-          message:
-            "Format tanggal tidak valid. Gunakan format 'YYYY-MM-DD' untuk tanggalMulai dan tanggalSelesai.",
-        });
-      }
-
-      where.checkIn = { [Op.between]: [startDate, endDate] };
-    } else if (tanggalMulai && !tanggalSelesai) {
-      const startDate = new Date(`${tanggalMulai}T00:00:00`);
-      if (isNaN(startDate.getTime())) {
-        return res
-          .status(400)
-          .json({ message: "Format tanggalMulai tidak valid." });
-      }
-      where.checkIn = { [Op.gte]: startDate };
-    } else if (!tanggalMulai && tanggalSelesai) {
-      const endDate = new Date(`${tanggalSelesai}T23:59:59`);
-      if (isNaN(endDate.getTime())) {
-        return res
-          .status(400)
-          .json({ message: "Format tanggalSelesai tidak valid." });
-      }
-      where.checkIn = { [Op.lte]: endDate };
+      where.checkIn = {
+        [Op.between]: [
+          new Date(`${tanggalMulai}T00:00:00`),
+          new Date(`${tanggalSelesai}T23:59:59`),
+        ],
+      };
+    } else if (tanggalMulai) {
+      where.checkIn = {
+        [Op.gte]: new Date(`${tanggalMulai}T00:00:00`),
+      };
+    } else if (tanggalSelesai) {
+      where.checkIn = {
+        [Op.lte]: new Date(`${tanggalSelesai}T23:59:59`),
+      };
     }
 
-    // Build include for User and optional nama filter
+    // ==========================
+    // RELASI USER
+    // ==========================
     const userInclude = {
       model: User,
-      as: "user", // ← WAJIB karena relasi pakai alias
+      as: "user", // alias WAJIB sesuai model
       attributes: ["id", "nama", "email"],
     };
 
@@ -52,19 +42,22 @@ exports.getDailyReport = async (req, res) => {
       userInclude.required = true;
     }
 
-    // Ambil data (urut berdasarkan checkIn desc)
+    // ==========================
+    // AMBIL DATA DARI DATABASE
+    // ==========================
     const records = await Presensi.findAll({
       where,
       include: [userInclude],
       order: [["checkIn", "DESC"]],
     });
 
-    // Format response supaya frontend gampang pakai
+    // ==========================
+    // FORMAT RESPONSE
+    // ==========================
     const data = records.map((r) => ({
       id: r.id,
-      user: r.User
-        ? user
-        : r.user
+
+      user: r.user
         ? {
             id: r.user.id,
             nama: r.user.nama,
@@ -74,12 +67,20 @@ exports.getDailyReport = async (req, res) => {
 
       checkIn: r.checkIn,
       checkOut: r.checkOut,
+
       latitude: r.latitude,
       longitude: r.longitude,
+
+      // ⭐ KIRIM BUKTI FOTO (INI YG HILANG KEMAREN)
+      buktiFoto: r.buktiFoto || null,
+
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
     }));
 
+    // ==========================
+    // KIRIM RESPONSE
+    // ==========================
     res.json({
       reportDate: new Date().toLocaleDateString("id-ID"),
       totalData: data.length,

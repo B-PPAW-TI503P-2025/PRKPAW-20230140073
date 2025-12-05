@@ -5,8 +5,9 @@ import { useNavigate } from "react-router-dom";
 function ReportPage() {
   const [reports, setReports] = useState([]);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const navigate = useNavigate();
 
   const fetchReports = async (query) => {
     const token = localStorage.getItem("token");
@@ -16,12 +17,7 @@ function ReportPage() {
     }
 
     try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      };
-
+      const config = { headers: { Authorization: `Bearer ${token}` } };
       const baseUrl = "http://localhost:3001/api/reports/daily";
       const url = query ? `${baseUrl}?nama=${query}` : baseUrl;
 
@@ -39,6 +35,7 @@ function ReportPage() {
   useEffect(() => {
     fetchReports("");
   }, [navigate]);
+
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     fetchReports(searchTerm);
@@ -46,10 +43,12 @@ function ReportPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-8">
+      {/* Judul */}
       <h1 className="text-3xl font-bold text-gray-800 mb-6">
         Laporan Presensi Harian
       </h1>
 
+      {/* FORM SEARCH */}
       <form onSubmit={handleSearchSubmit} className="mb-6 flex space-x-2">
         <input
           type="text"
@@ -66,71 +65,129 @@ function ReportPage() {
         </button>
       </form>
 
+      {/* ERROR */}
       {error && (
         <p className="text-red-600 bg-red-100 p-4 rounded-md mb-4">{error}</p>
       )}
 
+      {/* TABLE */}
       {!error && (
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Nama
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Check-In
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Check-Out
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Latitude
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Longitude
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Bukti Foto
                 </th>
               </tr>
             </thead>
+
             <tbody className="bg-white divide-y divide-gray-200">
               {reports.length > 0 ? (
-                reports.map((presensi) => (
-                  <tr key={presensi.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {presensi.user ? presensi.user.nama : "N/A"}
+                reports.map((p) => (
+                  <tr key={p.id}>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      {p.user ? p.user.nama : "N/A"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(presensi.checkIn).toLocaleString("id-ID", {
+
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {new Date(p.checkIn).toLocaleString("id-ID", {
                         timeZone: "Asia/Jakarta",
                       })}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {presensi.checkOut
-                        ? new Date(presensi.checkOut).toLocaleString("id-ID", {
+
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {p.checkOut
+                        ? new Date(p.checkOut).toLocaleString("id-ID", {
                             timeZone: "Asia/Jakarta",
                           })
                         : "Belum Check-Out"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {presensi.latitude || "N/A"}
+
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {p.latitude || "N/A"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {presensi.longitude || "N/A"}
+
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {p.longitude || "N/A"}
+                    </td>
+
+                    {/* FOTO */}
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {p.buktiFoto ? (
+                        <img
+                          src={`http://localhost:3001/${p.buktiFoto}`}
+                          alt="bukti"
+                          className="w-16 h-16 object-cover rounded cursor-pointer shadow"
+                          onClick={() =>
+                            setSelectedPhoto(
+                              `http://localhost:3001/${p.buktiFoto}`
+                            )
+                          }
+                        />
+                      ) : (
+                        "Tidak Ada"
+                      )}
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
                   <td
-                    colSpan="3"
+                    colSpan="6"
                     className="px-6 py-4 text-center text-gray-500"
                   >
-                    Tidak ada data yang ditemukan.
+                    Tidak ada data.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* =======================
+          MODAL FOTO FULLSCREEN
+      ======================== */}
+      {selectedPhoto && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50"
+          onClick={() => setSelectedPhoto(null)}
+        >
+          <div
+            className="relative max-w-5xl max-h-[90vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Tombol Close */}
+            <button
+              className="absolute -top-10 right-0 text-white text-3xl font-bold"
+              onClick={() => setSelectedPhoto(null)}
+            >
+              ✕
+            </button>
+
+            {/* Foto fullscreen */}
+            <img
+              src={selectedPhoto}
+              alt="Full"
+              className="rounded-lg shadow-xl max-h-[90vh] w-auto object-contain"
+            />
+          </div>
         </div>
       )}
     </div>

@@ -1,6 +1,7 @@
 // src/components/PresensiPage.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
+import Webcam from "react-webcam";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import icon from "leaflet/dist/images/marker-icon.png";
@@ -20,15 +21,23 @@ L.Marker.prototype.options.icon = L.icon({
 function PresensiPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-
-  const [coords, setCoords] = useState(null); // {lat, lng}
+  const [coords, setCoords] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // === Tambahan Modul Kamera ===
+  const [image, setImage] = useState(null);
+  const webcamRef = useRef(null);
+
+  const capture = useCallback(() => {
+    const imageSrc = webcamRef.current.getScreenshot();
+    setImage(imageSrc);
+  }, [webcamRef]);
 
   const getToken = () => {
     return localStorage.getItem("token");
   };
 
-  // Fungsi untuk mendapatkan lokasi pengguna
+  // Dapatkan lokasi
   const getLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -45,33 +54,40 @@ function PresensiPage() {
         }
       );
     } else {
-      setError("Geolocation tidak didukung oleh browser ini.");
+      setError("Geolocation tidak didukung browser ini.");
       setIsLoading(false);
     }
   };
+
   useEffect(() => {
     getLocation();
   }, []);
 
+  // === Perbaikan handleCheckIn ===
   const handleCheckIn = async () => {
-    if (!coords) {
-      setError("Lokasi belum didapatkan. Mohon izinkan akses lokasi.");
+    if (!coords || !image) {
+      setError("Lokasi dan Foto wajib ada!");
       return;
     }
+
     try {
+      const blob = await (await fetch(image)).blob();
+
+      const formData = new FormData();
+      formData.append("latitude", coords.lat);
+      formData.append("longitude", coords.lng);
+      formData.append("image", blob, "selfie.jpg");
+
       const config = {
         headers: {
           Authorization: `Bearer ${getToken()}`,
+          "Content-Type": "multipart/form-data",
         },
       };
 
       const response = await axios.post(
         "http://localhost:3001/api/Presensi/check-in",
-        // Kirim data lokasi bersama request
-        {
-          latitude: coords.lat,
-          longitude: coords.lng,
-        },
+        formData,
         config
       );
 
@@ -81,6 +97,7 @@ function PresensiPage() {
     }
   };
 
+  // CHECK OUT (tetap milik kamu)
   const handleCheckOut = async () => {
     setError("");
     setMessage("");
@@ -90,6 +107,7 @@ function PresensiPage() {
           Authorization: `Bearer ${getToken()}`,
         },
       };
+
       const response = await axios.post(
         "http://localhost:3001/api/Presensi/check-out",
         {},
@@ -131,14 +149,51 @@ function PresensiPage() {
           </div>
         </div>
       )}
+
+      {/* === Tambahan Modul Kamera === */}
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
         <h2 className="text-3xl font-bold mb-6 text-gray-800">
           Lakukan Presensi
         </h2>
 
+        {/* Kamera */}
+        <div className="my-4 border rounded-lg overflow-hidden bg-black">
+          {image ? (
+            <img src={image} alt="Selfie" className="w-full" />
+          ) : (
+            <Webcam
+              audio={false}
+              ref={webcamRef}
+              screenshotFormat="image/jpeg"
+              className="w-full"
+            />
+          )}
+        </div>
+
+        {/* Tombol Foto */}
+        <div className="mb-4">
+          {!image ? (
+            <button
+              onClick={capture}
+              className="bg-blue-500 text-white px-4 py-2 rounded w-full"
+            >
+              Ambil Foto 📸
+            </button>
+          ) : (
+            <button
+              onClick={() => setImage(null)}
+              className="bg-gray-500 text-white px-4 py-2 rounded w-full"
+            >
+              Foto Ulang 🔄
+            </button>
+          )}
+        </div>
+
+        {/* Pesan */}
         {message && <p className="text-green-600 mb-4">{message}</p>}
         {error && <p className="text-red-600 mb-4">{error}</p>}
 
+        {/* Tombol Check-in/out */}
         <div className="flex space-x-4">
           <button
             onClick={handleCheckIn}
