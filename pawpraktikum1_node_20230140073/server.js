@@ -11,6 +11,7 @@ const presensiRoutes = require("./routes/presensi");
 const reportRoutes = require("./routes/reports");
 
 const authRoutes = require("./routes/auth");
+const iotRoutes = require("./routes/iot");
 
 // // Middleware (HARUS DI ATAS ROUTE SPESIFIK)
 app.use(cors());
@@ -22,6 +23,7 @@ app.use((req, res, next) => {
 });
 // // END Middleware
 
+app.use("/api/iot", iotRoutes);
 // Route Spesifik (HARUS DI BAWAH Body Parser)
 app.use("/api/books", bookRoutes);
 
