@@ -6,6 +6,7 @@ import DashboardPage from "./components/DashboardPage";
 import PresensiPage from "./components/PresensiPage";
 import ReportPage from "./components/ReportPage";
 import Navbar from "./components/Navbar";
+import SensorPage from "./components/SensorPage";
 import "leaflet/dist/leaflet.css";
 
 const MainLayout = ({ children }) => {
@@ -24,6 +25,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/monitoring" element={<SensorPage />} />
           <Route
             path="/dashboard"
             element={
